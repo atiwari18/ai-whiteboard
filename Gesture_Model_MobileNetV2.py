@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import models, transforms, datasets
 from torch.utils.data import DataLoader
+from sklearn.metrics import precision_score, recall_score
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -80,23 +81,33 @@ def train_model(m, c, o, t, v, epochs=10):
 train_model(model, criterion, optimizer, train_loader, val_loader, epochs=10)
 
 # Testing function
-def model_accuracy(m, t):
+def model_evaluation(m, t):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
-    correct = 0
-    total = 0
+
+    all_labels = []
+    all_predictions = []
 
     with torch.no_grad():
         for inputs, labels in test_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs)
             _, predicted = torch.max(outputs.data, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
 
-    test_accuracy = 100 * correct / total
-    print(f"\nTest Accuracy: {test_accuracy:.2f}%")
+            all_labels.extend(labels.cpu().numpy())
+            all_predictions.extend(predicted.cpu().numpy())
+
+    # Calculate accuracy
+    accuracy = 100 * (torch.tensor(all_predictions) == torch.tensor(all_labels)).sum().item() / len(all_labels)
+    print(f"\nTest Accuracy: {accuracy:.2f}%")
+
+    # Calculate Precision and Recall (macro-averaged)
+    precision = precision_score(all_labels, all_predictions, average='macro')
+    recall = recall_score(all_labels, all_predictions, average='macro')
+
+    print(f"Precision: {precision:.2f}")
+    print(f"Recall: {recall:.2f}")
 
 # Test the model
-model_accuracy(model, test_loader)
+model_evaluation(model, test_loader)

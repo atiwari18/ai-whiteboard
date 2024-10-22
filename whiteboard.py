@@ -1,6 +1,6 @@
 import cv2
 import torch
-from Gesture_Model import model, transform  # Import the trained model and transform from your existing file
+from Gesture_Model_MobileNetV2 import model, transform  # Import the trained model and transform from your existing file
 from PIL import Image
 
 # Define function to load model and prepare it for inference
