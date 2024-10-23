@@ -17,9 +17,9 @@ transform = transforms.Compose([
 ])
 
 # Load datasets
-train_data = datasets.ImageFolder("Train/", transform=transform)
-val_data = datasets.ImageFolder("Val/", transform=transform)
-test_data = datasets.ImageFolder("Test/", transform=transform)
+train_data = datasets.ImageFolder("../Train/", transform=transform)
+val_data = datasets.ImageFolder("../Val/", transform=transform)
+test_data = datasets.ImageFolder("../Test/", transform=transform)
 
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=32, shuffle=False)
