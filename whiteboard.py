@@ -1,20 +1,38 @@
 import cv2
 import torch
-from Gesture_Model_MobileNetV2 import model, transform  # Import the trained model and transform from your existing file
+from torchvision import models, transforms
 from PIL import Image
 
-# Define function to load model and prepare it for inference
-def load_model():
+# Define the same transformations as used during training
+transform = transforms.Compose([
+    transforms.Resize((299, 299)),  # Adjusted size for Inception v3
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+])
+
+
+# Define function to load the pre-trained and saved model
+def load_model(model_path="inception_v3_trained_model.pth"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.eval().to(device)
+
+    # Load Inception v3 model
+    model = models.inception_v3(pretrained=False)
+    model.fc = torch.nn.Linear(model.fc.in_features, 3)  # Adjust output classes as needed (e.g., 3 classes here)
+    model.AuxLogits.fc = torch.nn.Linear(model.AuxLogits.fc.in_features, 3)  # Ensure auxiliary is also set
+
+    # Load the saved weights
+    model.load_state_dict(torch.load(model_path, map_location=device))
+    model.eval().to(device)  # Set the model to evaluation mode and move to device
+
     return model, device
+
 
 # Function to make predictions based on video frame input
 def predict_gesture(frame, model, device):
     # Convert OpenCV frame (NumPy array) to PIL image
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(frame)
-    pil_image = pil_image.resize((224, 224))  # Ensure consistent size
+    pil_image = pil_image.resize((299, 299))  # Ensure consistent size for Inception v3
 
     # Transform the PIL image as per training requirements
     frame_tensor = transform(pil_image).unsqueeze(0).to(device)
@@ -25,9 +43,10 @@ def predict_gesture(frame, model, device):
 
     return predicted.item()
 
+
 # Function to run gesture detection
 def run_gesture_detection():
-    model, device = load_model()
+    model, device = load_model("inception_v3_trained_model.pth")  # Adjust the path if needed
     cap = cv2.VideoCapture(0)
 
     while True:
@@ -47,7 +66,7 @@ def run_gesture_detection():
         elif gesture == 1:
             gesture_label = "Erase Gesture"
         else:
-            gesture_label = "Unknown Gesture"
+            gesture_label = "Stop Gesture"
 
         # Display the label on the frame
         cv2.putText(frame, f"Detected: {gesture_label}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
@@ -61,6 +80,7 @@ def run_gesture_detection():
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     run_gesture_detection()
