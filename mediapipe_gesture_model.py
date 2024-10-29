@@ -121,7 +121,7 @@ def main():
     # Number of consecutive frames needed to change gesture
     #  - Lowering this value resulted in a quicker detection of the gesture.
     #  - Prev. value of 3/5 resulted in a delay or lack of detection in hand gesture.
-    CONFIDENCE_THRESHOLD = 1
+    CONFIDENCE_THRESHOLD = 2
 
     try:
         while cap.isOpened():
