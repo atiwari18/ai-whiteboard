@@ -155,6 +155,12 @@ def main():
                     # Get handedness (left or right)
                     hand_type = handedness.classification[0].label
 
+                    
+
+                    # Detect and handle different gestures:
+                    # - Open palm = stop drawing
+                    # - Pointer finger = draw mode
+                    # - Fist = erase canvas
                     this_gesture = "None"                    
                     if is_palm_open(hand_landmarks):
                         this_gesture = "stop"
@@ -174,33 +180,6 @@ def main():
                     
                     last_gesture = this_gesture
 
-                    # Detect and handle different gestures:
-                    # - Open palm = stop drawing
-                    # - Pointer finger = draw mode
-                    # - Fist = erase canvas
-                    '''if is_palm_open(hand_landmarks, hand_type):
-                        if current_gesture != "stop":
-                            gesture_confidence += 1
-                            if gesture_confidence >= CONFIDENCE_THRESHOLD:
-                                current_gesture = "stop"
-                                last_position = None  # Reset position to stop drawing
-                        gesture_detected = True
-
-                    elif is_pointer_finger_extended(hand_landmarks):
-                        if current_gesture != "draw":
-                            gesture_confidence += 1
-                            if gesture_confidence >= CONFIDENCE_THRESHOLD:
-                                current_gesture = "draw"
-                        gesture_detected = True
-
-                    elif is_pointer_finger_extended(hand_landmarks):
-                        if current_gesture != "erase":
-                            gesture_confidence += 1
-                            if gesture_confidence >= CONFIDENCE_THRESHOLD:
-                                current_gesture = "erase"
-                                canvas = np.zeros_like(frame)  # Clear canvas
-                        gesture_detected = True'''
-
                     # Get pointer finger tip position for drawing
                     if current_gesture == "draw":
                         pointer_tip = hand_landmarks.landmark[mp_hands.HandLandmark.INDEX_FINGER_TIP]
@@ -218,7 +197,7 @@ def main():
 
 
                     # Display handedness and current gesture
-                    cv2.putText(frame, f"Hand: {gesture_confidence}", (10, 30),
+                    cv2.putText(frame, f"Hand: {hand_type}", (10, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                     if current_gesture == "draw":
