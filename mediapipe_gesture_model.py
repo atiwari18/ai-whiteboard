@@ -20,6 +20,7 @@ absl.logging._warn_preinit_stderr = False
 import cv2
 import mediapipe as mp
 import numpy as np
+import math
 
 # Initialize mp_hands
 mp_hands = mp.solutions.hands
@@ -29,6 +30,10 @@ hands = mp_hands.Hands(
     model_complexity=0
 )
 mp_draw = mp.solutions.drawing_utils
+
+#Function to get distance between hand landmarks
+def get_3d_dist(a, b):
+    return math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2 + (a.z-b.z)**2)
 
 #Function to check if a finger is extended.
 def is_finger_extended(hand_landmarks, finger_tip_id, finger_pip_id):
@@ -41,14 +46,13 @@ def is_finger_extended(hand_landmarks, finger_tip_id, finger_pip_id):
 def check_thumb_extended(hand_landmarks):
     """Check if thumb is extended based on hand orientation"""
     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
-    thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
-    thumb_cmc = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_CMC]
+    middle_dip = hand_landmarks.landmark[mp_hands.HandLandmark.MIDDLE_FINGER_DIP]
 
     # Calculate the horizontal distance between thumb tip and MCP
-    thumb_distance = abs(thumb_tip.x - thumb_mcp.x)
+    thumb_distance = get_3d_dist(thumb_tip, middle_dip)
 
     # Check if thumb is far enough from the palm
-    return thumb_distance > 0.03  # Adjust this threshold if needed
+    return thumb_distance > 0.05  # Adjust this threshold if needed
 
 #Function to check if the pointer finger is extended.
 def is_pointer_finger_extended(hand_landmarks):
@@ -121,7 +125,7 @@ def main():
 
     # Number of consecutive frames needed to change gesture
     # Lower values helped reduce jitter and made the symbol detection more consistent.
-    CONFIDENCE_THRESHOLD = 1
+    CONFIDENCE_THRESHOLD = 4
 
     # Canvas for drawing
     canvas = None
@@ -163,6 +167,7 @@ def main():
                         gesture_confidence += 1
                     else:
                         gesture_confidence = 0
+                        print("test")
                     
                     if gesture_confidence >= CONFIDENCE_THRESHOLD:
                         current_gesture = this_gesture
@@ -208,8 +213,12 @@ def main():
                     else:
                         last_position = None  # Reset last position if not in draw mode
 
+                    if current_gesture == "erase":
+                        canvas = np.zeros_like(frame)  # Clear canvas
+
+
                     # Display handedness and current gesture
-                    cv2.putText(frame, f"Hand: {hand_type}", (10, 30),
+                    cv2.putText(frame, f"Hand: {gesture_confidence}", (10, 30),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
                     if current_gesture == "draw":
@@ -222,9 +231,6 @@ def main():
                         cv2.putText(frame, "Stop Mode", (50, 70),
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
-            # Reset confidence if no gesture is detected
-            if not gesture_detected:
-                gesture_confidence = 0
 
             # Direct overlay without blending
             mask = cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY)
