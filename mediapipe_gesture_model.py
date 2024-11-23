@@ -78,7 +78,7 @@ def is_pointer_finger_extended(hand_landmarks):
     )
 
     # Return true only if index is extended and others are not
-    return index_extended and not (middle_extended or ring_extended or pinky_extended)
+    return index_extended and not (middle_extended or ring_extended or pinky_extended) and not check_thumb_extended(hand_landmarks)
 
 #Function to check if the hand is in a fist.
 def is_fist(hand_landmarks):
