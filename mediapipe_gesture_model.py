@@ -38,7 +38,7 @@ def is_finger_extended(hand_landmarks, finger_tip_id, finger_pip_id):
     return tip.y < pip.y
 
 #Function to check if the thumb is extended on each hand.
-def check_thumb_extended(hand_landmarks, handedness):
+def check_thumb_extended(hand_landmarks):
     """Check if thumb is extended based on hand orientation"""
     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
     thumb_mcp = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_MCP]
@@ -94,7 +94,7 @@ def is_fist(hand_landmarks):
     return all(not is_finger_extended(hand_landmarks, tip, pip) for tip, pip in fingers)
 
 #Function to check if the palm is open and all fingers are extended.
-def is_palm_open(hand_landmarks, handedness):
+def is_palm_open(hand_landmarks):
     #Check if all fingers are extended (open palm)
     fingers = [
         (mp_hands.HandLandmark.INDEX_FINGER_TIP, mp_hands.HandLandmark.INDEX_FINGER_PIP),
@@ -104,7 +104,7 @@ def is_palm_open(hand_landmarks, handedness):
     ]
 
     # Check thumb extension using the new function
-    thumb_extended = check_thumb_extended(hand_landmarks, handedness)
+    thumb_extended = check_thumb_extended(hand_landmarks)
 
     # Check if all fingers are extended (tips above PIPs)
     fingers_extended = all(is_finger_extended(hand_landmarks, tip, pip) for tip, pip in fingers)
@@ -127,6 +127,7 @@ def main():
     canvas = None
     drawing_color = (0, 255, 0)  # Green color for drawing
     last_position = None  # To track the last position of the pointer finger tip
+    last_gesture = "None"
 
     try:
         while cap.isOpened():
@@ -150,11 +151,29 @@ def main():
                     # Get handedness (left or right)
                     hand_type = handedness.classification[0].label
 
+                    this_gesture = "None"                    
+                    if is_palm_open(hand_landmarks):
+                        this_gesture = "stop"
+                    elif is_pointer_finger_extended(hand_landmarks):
+                        this_gesture = "draw"
+                    elif is_fist(hand_landmarks):
+                        this_gesture = "erase"
+
+                    if this_gesture == last_gesture:
+                        gesture_confidence += 1
+                    else:
+                        gesture_confidence = 0
+                    
+                    if gesture_confidence >= CONFIDENCE_THRESHOLD:
+                        current_gesture = this_gesture
+                    
+                    last_gesture = this_gesture
+
                     # Detect and handle different gestures:
                     # - Open palm = stop drawing
                     # - Pointer finger = draw mode
                     # - Fist = erase canvas
-                    if is_palm_open(hand_landmarks, hand_type):
+                    '''if is_palm_open(hand_landmarks, hand_type):
                         if current_gesture != "stop":
                             gesture_confidence += 1
                             if gesture_confidence >= CONFIDENCE_THRESHOLD:
@@ -169,13 +188,13 @@ def main():
                                 current_gesture = "draw"
                         gesture_detected = True
 
-                    elif is_fist(hand_landmarks):
+                    elif is_pointer_finger_extended(hand_landmarks):
                         if current_gesture != "erase":
                             gesture_confidence += 1
                             if gesture_confidence >= CONFIDENCE_THRESHOLD:
                                 current_gesture = "erase"
                                 canvas = np.zeros_like(frame)  # Clear canvas
-                        gesture_detected = True
+                        gesture_detected = True'''
 
                     # Get pointer finger tip position for drawing
                     if current_gesture == "draw":
