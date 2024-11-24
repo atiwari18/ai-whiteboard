@@ -25,10 +25,12 @@ import math
 # Initialize mp_hands
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
-    min_detection_confidence=0.8,
-    min_tracking_confidence=0.8,
+    min_detection_confidence=0.8, #Confidence Threshold for hand detection.
+    min_tracking_confidence=0.8, #Confidence Threshold for hand tracking.
     model_complexity=0
 )
+
+#Utility for drawing hand landmarks on the frame.
 mp_draw = mp.solutions.drawing_utils
 
 #Function to get distance between hand landmarks
@@ -37,12 +39,15 @@ def get_3d_dist(a, b):
 
 #Function to check if a finger is extended.
 def is_finger_extended(hand_landmarks, finger_tip_id, finger_pip_id):
-    """Helper function to check if a finger is extended"""
+    """
+    Check if a finger is extended based on the relative y-coordinates of
+    its tip and proximal interphalangeal (PIP) joint.
+    """
     tip = hand_landmarks.landmark[finger_tip_id]
     pip = hand_landmarks.landmark[finger_pip_id]
     return tip.y < pip.y
 
-#Function to check if the thumb is extended on each hand.
+#Function to check if the thumb is extended by measuring its distance from the middle finger DIP joint.
 def check_thumb_extended(hand_landmarks):
     """Check if thumb is extended based on hand orientation"""
     thumb_tip = hand_landmarks.landmark[mp_hands.HandLandmark.THUMB_TIP]
@@ -56,7 +61,8 @@ def check_thumb_extended(hand_landmarks):
 
 #Function to check if the pointer finger is extended.
 def is_pointer_finger_extended(hand_landmarks):
-    #Check if only the index finger is extended
+    #Check if only the index finger is extended'
+
     # Check index finger
     index_extended = is_finger_extended(
         hand_landmarks,
@@ -81,7 +87,7 @@ def is_pointer_finger_extended(hand_landmarks):
         mp_hands.HandLandmark.PINKY_PIP
     )
 
-    # Return true only if index is extended and others are not
+    #Return true if only the index finger is extended and others (including the thumb) are not.
     return index_extended and not (middle_extended or ring_extended or pinky_extended) and not check_thumb_extended(hand_landmarks)
 
 #Function to check if the hand is in a fist.
@@ -124,7 +130,6 @@ def main():
     gesture_confidence = 0
 
     # Number of consecutive frames needed to change gesture
-    # Lower values helped reduce jitter and made the symbol detection more consistent.
     CONFIDENCE_THRESHOLD = 4
 
     # Canvas for drawing
@@ -155,13 +160,13 @@ def main():
                     # Get handedness (left or right)
                     hand_type = handedness.classification[0].label
 
-                    
+
 
                     # Detect and handle different gestures:
                     # - Open palm = stop drawing
                     # - Pointer finger = draw mode
                     # - Fist = erase canvas
-                    this_gesture = "None"                    
+                    this_gesture = "None"
                     if is_palm_open(hand_landmarks):
                         this_gesture = "stop"
                     elif is_pointer_finger_extended(hand_landmarks):
@@ -169,15 +174,16 @@ def main():
                     elif is_fist(hand_landmarks):
                         this_gesture = "erase"
 
+                    #Confirm if the gesture is consistent for enough frames.
                     if this_gesture == last_gesture:
                         gesture_confidence += 1
                     else:
                         gesture_confidence = 0
-                        print("test")
-                    
+                        #print("test")
+
                     if gesture_confidence >= CONFIDENCE_THRESHOLD:
                         current_gesture = this_gesture
-                    
+
                     last_gesture = this_gesture
 
                     # Get pointer finger tip position for drawing
@@ -211,7 +217,7 @@ def main():
                                     cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
 
 
-            # Direct overlay without blending
+            # Combine the frame and canvas without blending for display.
             mask = cv2.cvtColor(canvas, cv2.COLOR_BGR2GRAY)
             _, mask = cv2.threshold(mask, 10, 255, cv2.THRESH_BINARY)
             mask_inv = cv2.bitwise_not(mask)
@@ -228,8 +234,6 @@ def main():
         cap.release()
         cv2.destroyAllWindows()
         hands.close()
-
-
 
 if __name__ == "__main__":
     main()
