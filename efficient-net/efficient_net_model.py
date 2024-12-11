@@ -5,9 +5,13 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 from efficientnet_pytorch import EfficientNet
 from sklearn.metrics import precision_score, recall_score
+import os
 
 # Define the device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
 
 # Define the data transforms
 transform = transforms.Compose([
@@ -17,9 +21,9 @@ transform = transforms.Compose([
 ])
 
 # Load datasets
-train_data = datasets.ImageFolder("../Train/", transform=transform)
-val_data = datasets.ImageFolder("../Val/", transform=transform)
-test_data = datasets.ImageFolder("../Test/", transform=transform)
+train_data = datasets.ImageFolder(os.path.join(current_dir, "../Train/"), transform=transform)
+val_data = datasets.ImageFolder(os.path.join(current_dir, "../Val/"), transform=transform)
+test_data = datasets.ImageFolder(os.path.join(current_dir, "../Test/"), transform=transform)
 
 train_loader = DataLoader(train_data, batch_size=32, shuffle=True)
 val_loader = DataLoader(val_data, batch_size=32, shuffle=False)
@@ -78,7 +82,7 @@ def train_model(model, criterion, optimizer, train_loader, val_loader, epochs=10
 train_model(model, criterion, optimizer, train_loader, val_loader, epochs=10)
 
 # Save the trained model
-torch.save(model.state_dict(), "efficientnet_model.pth")
+torch.save(model.state_dict(), "efficient-net/efficientnet_model.pth")
 
 # Testing function
 def model_evaluation(m, t):

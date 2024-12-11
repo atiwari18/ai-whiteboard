@@ -4,12 +4,15 @@ from efficientnet_pytorch import EfficientNet
 import torch
 from torchvision import transforms
 
+print("test")
+
 # Load the trained model
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 num_classes = 3  # Update this with the number of classes in your dataset
 
 model = EfficientNet.from_pretrained('efficientnet-b0', num_classes=num_classes)
-model.load_state_dict(torch.load("efficientnet_model.pth"))  # Load your trained weights
+
+model.load_state_dict(torch.load("efficient-net/efficientnet_model.pth"))  # Load your trained weights
 model.to(device)
 model.eval()  # Set the model to evaluation mode
 
